@@ -1,0 +1,88 @@
+Хуки (перехваты) являются полезными функциями для перехвата например информации или что-нибудь заблокировать
+И в роблокс эксплоитах есть функции этих хуков
+Они заменяют старую функцию на новую модифицируя её
+Хук нельзя выключить обычным способом и он будет работать даже если функция удалена
+Вот функции:
+
+1) hookfunction(oldfunc, newfunc)
+Функция перехватывает функцию (только функцию)
+Вот самый простой пример:
+
+hookfunction(print, warn)
+
+Хук заменяет функцию print на warn и все аргументы перенаправляются на новую функцию
+! Для справки нельзя делать local hook = , можно только local hook; hook =
+! Функцию C closure нельзя заменить на Lua closure
+! В окружении лучше нельзя использовать GetService ведь может быть C overflow и хук не будет работать
+! Если в хуке ошибка то она может заморозить игру, но только если это было а первоначальном варианте
+! Много хуков могут делать сильные лаги
+Вот второй пример:
+
+hook = hookfunction(print, function(...)
+ warn((...))
+  return hook(...)
+end)
+
+Этот хук перехват функцию print и узнаёт какой текст был отправлен функцией print
+Также можно сделать так чтобы функция в принципе не работала используя return:
+
+hook = hookfunction(print, function()
+  return nil
+end)
+
+Это основные компоненты для этой функции теперь следующая функция:
+
+2) hookmetamethod(environment, metamethod, newfunc)
+
+Эта функция подходит для метатаблиц и для юзердата (Instance)
+Например тоже узнать информацию или заблокировать метод или изменение
+Пример функции:
+
+hook = hookmetamethod(game, "__namecall", function(self, ...)
+ if self == game and getnamecallmethod() == "HttpGet" then
+  print((...))
+ end
+  return hook(self, ...)
+end)
+
+Объяснение:
+1. self это то что вызвало этот метаметод, а ... это то что запустилось методом
+2. getnamecallmethod() функция которая получает namecall у перехваченного окружения (он всегда является string и может использоваться только в хуках)
+3. return hook(self, ...) возвращает окружение и аргументы чтобы функция работала как обычно (восстанавливала её)
+
+У hookmetamethod второй аргумент можно использовать любые метаметоды но основые это __index, __namecall, __newindex
+Также у этого хука также работает return:
+
+hook = hookmetamethod(game.Players, "__namecall", function(self, ...)
+ if self == game.Players.LocalPlayer and getnamecallmethod():lower() == "kick" then
+return nil
+ end
+  return hook(self, ...)
+end)
+
+Этот хук блокирует метод Kick на локального игрока, но только если кик был со стороны клиента
+
+И пример с __index:
+
+hook = hookmetamethod(game, "__index", function(self, prop)
+ if self == game and game:FindFirstChild(tostring(prop)) then
+return game:GetService(tostring(prop))
+ end
+  return hook(self, prop)
+end)
+
+3) ishooked(variable)
+
+Эта функция узнаёт является ли переменная хуком, ничего сложного
+Вот обычный пример:
+
+hook = hookfunction(warn, error)
+print(ishooked(hook)) -- true
+
+4) isfunctionhooked(variable)
+
+Эта функция узнаёт используется ли хук на эту функцию, тоже ничего сложного
+Вот пример:
+
+hook = hookfunction(warn, error)
+print(isfunctionhooked(warn), isfunctionhooked(hook)) -- true false
