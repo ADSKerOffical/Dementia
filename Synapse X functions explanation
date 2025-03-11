@@ -1,0 +1,379 @@
+Синапс функции: Эксплоит функции которые доступны только клиентской стороны
+Вот все функции:
+
+1) getgenv(): table
+Описание: (Get global environment) – почти тоже самое что и _G, но можно писать для переменной _G
+Пример:
+
+-- script 1:
+getgenv().popa = 10
+-- script 2:
+print(popa) -- 10
+
+2) setreadonly(table, bool): void
+Описание: замораживает или размораживает таблицу
+Пример:
+
+tabl = {}
+setreadonly(tabl, true)
+table.insert(tabl, "g") -- error
+
+3) getfpscap(): number
+Описание: получает поставленное фпс через setfpscap (по умолчанию 0)
+
+4) setfpscap(number): void
+Описание: ставит лимит для фпс
+Пример:
+
+print(getfps()) -- >=60 -- это типо функция которая получает фпс (её не существует)
+setfpscap(5)
+print(getfps()) -- <=5
+
+5) isreadonly(table): bool
+Описание: узнает является ли таблица замороженой
+? Является заменой функции table.isfrozen
+Пример:
+
+local tabl = {}
+setreadonly(tabl, true)
+print(isreadonly(tabl)) -- true
+
+6) newcclosure(function): void
+Описание: делает обёртку для функции делая её C closure (будто написанная на C) и защищая от debug библиотеки и частично от хуков
+? После обёртки функцию нельзя будет больше сделать Lua closure
+Пример:
+
+local func = newcclosure(function()
+  return "test"
+end)
+
+7) iscclosure(function): bool
+Описание: проверяет является ли функция C closure
+Пример:
+
+local test = function() end
+print(iscclosure(print)) -- true
+print(iscclosure(test)) -- false
+
+8) islclosure(function): bool
+Описание: проверяет является ли функция Lua closure (противоположность iscclosure)
+
+9) getreg(): table
+Описание: получает Lua registry
+? Lua registry это как глобальная таблица содержащая глобальные переменные
+
+10) getgc(): table
+Описание: получает все элементы в памяти игры
+Пример:
+
+for _, elem in next, getgc() do
+  if typeof(elem) == "Instance" then
+print(elem:GetFullName())
+  end
+end
+
+11) getnilinstances(): table
+Описание: получает все объекты которые являются nil, но они всё ещё есть в памяти
+? Даже если объект nil то его можно использовать 
+! Если этот объект находится в этой таблице, то нет смысла использовать на него GetFullName()
+
+12) firesignal(RBXScriptSignal): void
+Описание: запускает все соединения у этого сигнала
+
+13) firetouchinterest(part1, part2, number): void
+Описание: симулирует прикосновение двух частей если у part2 есть TouchInterest (и может глобально если сеть объекта part2 находится во владении локального игрока)
+! number не на что не влияет, но её надо добавлять в функцию
+? Если игрок находится во владении локального игрока, то локальный игрок может использовать эту функцию глобально 
+Пример:
+
+local tool = LP.Character:FindFirstChildOfClass("Tool")
+firetouchinterest(player.Character.HumanoidRootPart, tool.Handle, 0)
+
+14) fireclickdetector(ClickDetector): void
+Описание: симулирует нажатие на ClickDetector с любого расстояния (всегда глобально)
+Пример:
+
+for _, cd in next, workspace:GetChildren() do
+  if cd:IsA("ClickDetector") then
+fireclickdetector(cd)
+  end
+end
+
+15) fireproximityprompt(ProximityPrompt, number): void
+Описание: симулирует запуск prompt
+! Запуск prompt ограничен и работает только с расстояния который указал сервер
+Пример: 
+
+for _, pp in next, workspace:GetChildren() do
+  if pp:IsA("ProximityPrompt") then
+LPC.HumanoidRootPart.CFrame = pp.Parent
+ task.wait(0.1)
+fireproximityprompt(pp, 0)
+  end
+end
+
+16) gethiddenproperty(instance, property: string): value
+Описание: получает значение спрятанного параметра у объекта
+Пример:
+
+print(gethiddenproperty(part, "NetworkIsSleeping"))
+
+17) sethiddenproperty(instance, property: string, value): void
+Описание: ставит значение для спрятанного параметра у объекта 
+? Может ставится и для обычных параметров
+
+18) getconnections(RBXScriptSignal): table
+Описание: получает все соединения у класса у его сигнала
+Пример:
+
+for _, connection in next, getconnections(game.GuiService.MenuOpened) do
+  connection:Disconnect()
+end
+
+19) getrawmetatable(table, metatable): table
+Описание: аналогичен с getmetatable но игнорирует любые защиты
+
+20) setrawmetatable(table, metatable): void
+Описание: аналогичен с setmetatable но игнорирует любые защиты
+
+21) hookfunction(oldfunc, newfunc): function
+Описание: перехватывает функцию заменяя её на новую и все аргументы старой функции передаются новой
+! Нельзя заменить C closure функцию на Lua Closure
+! Нельзя делать хуки локальными методом "local hook = " можно только "local hook; hook ="
+Пример:
+
+hook = hookfunction(error, newcclosure(...)
+ print((...))
+  return hook(...)
+end)
+
+22) hookmetamethod(env, metamethod, newfunc): function 
+Описание: перехватывает metamethod у окружения и для объекта ставиться newfunc
+Пример:
+
+hook = hookmetamethod(game.Players, "__namecall", newcclosure(function(self, ...)
+   if self == game.Players.LocalPlayer and getnamecallmethod() == "Kick" then
+ print(unpack({...}))
+     return nil
+   end
+  return hook(self, ...)
+end))
+
+? self это что вызвало в окружении, (...) это аргументы которые вызвал __namecall
+! Для перехвата можно использовать только те метаметоды которые есть у метатаблицы этого объекта
+
+23) getnamecallmethod(): string
+Описание: получает метод который сейчас используется в хуке у окружения
+! Использовать функцию можно только в хуках
+... Пример этой функции находится выше ↑
+
+24) ishooked(var): bool
+Описание: проверяет является ли функция хуком
+
+25) isfunctionhooked(var): bool
+Описание: проверяет подвергается ли функция хуку
+
+26) checkcaller(): bool
+Описание: проверяет запустился ли скрипт в окружении клиента
+? Полезен для хуков когда нужно заблокировать метод только для клиента или сервера
+Пример:
+
+hook = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+ if not checkcaller() and self == game.Players.LocalPlayer and getnamecallmethod() == "Kick" then
+   return nil
+ end
+  return hook(self, ...)
+end))
+
+27) gethui(): Instance
+Описание: является заменителем game.CoreGui но и делает Gui более незаметным для анти читов
+Пример:
+
+local SG = Instance.new("ScreenGui", gethui())
+print(SG:GetFullName()) -- CoreGui.ABCDE.FJKLM.ScreenGui -- Вместо ABCDE и FJKLM используются рандомные строки
+
+28) identifyexecutor(): string
+Описание: получает название эксплоита и всё
+
+29) getexecutorname(): string
+Описание: получает название эксплоита и его версию
+
+30) gethwid(): string
+Описание: получает Hardware ID локального игрока (Айди клиента)
+
+31) keypress(KeyCode: number): void
+Описание: симулирует нажатие кнопки по его байт коду или Enum.KeyCode
+! Не вызывает триггеры для нажатий кнопок
+Пример:
+
+keypress(string.byte("F9"))
+
+32) isrbxactive(), isgameactive(): bool
+Описание: проверяет открыто или закрыто окно роблокса
+
+33) setclipboard, toclipboard, setrbxclipboard(string): void
+Описание: копирует текст в буфер обмена
+! Он должен быть обязательно строкой
+
+34) clonefunction(function): function
+Описание: просто копирует функцию
+
+35) getrenv(): self
+Описание: получает роблокс окружение у функции
+Пример:
+
+print(getrenv().debug.getinfo)
+
+36) getscripthash(script: LuaSourceContainer): table
+Описание: получает кеш скрипта. в виде строки
+
+37) getscriptbytecode(script: LuaSourceContainer): value
+Описание: получает байт код скрипта
+Пример:
+
+local animate = game:GetService("Players").LocalPlayer.Character.Animate
+print(getscriptbytecode(animate))
+
+38) getscripts(): table
+Описание: получает все скрипты в игре
+
+39) getscriptfunction, get_script_function(script: ModuleScript): Instance
+Описание: получает скрипт который вызывается этим модулем
+
+40) getmodules(): table
+Описание: получает все ModuleScript 
+
+41) getloadedmodules(): table
+Описание: получает все загруженные ModuleScript
+
+42) isscriptable(class: Instance, property: string): bool
+Описание: проверяет можно ли изменять этот параметр у класса
+Пример:
+
+print(isscriptable(game.Players, "BanningEnabled"))
+
+43) setscriptable(class: Instance, property: string, bool): void
+Описание: делает так чтобы можно будет изменять или не изменять параметр у класса
+! Функция сохранятся между друг-друга для всех объектов этого класса
+Пример:
+
+setscriptable(game.Players, "BanningEnabled", true)
+game.Players.BanningEnabled = false
+
+44) getfflag(fflag: string): string 
+Описание: получает значение у FFlag
+? FFlag (Fast Flag) – флаги которые управляют сервером и они написаны на C
+! Можно получить информацию только об Lua FFlag
+Пример:
+
+print(getfflag("DebugCrashEnabled")) -- false
+
+45) setfflag(fflag: string, value: string): void
+Описание: ставит значение у FFlag
+Пример:
+
+setfflag("DebugCrashEnabled", "true")
+print(getfflag("DebugCrashEnabled")) -- true
+
+46) getinstances(): table
+Описание: получает все объекты в игре
+
+47) isnetworkowner(part: BasePart): bool
+Описание: проверяет является ли часть "будто" под контролем локального игрока (это может быть не точно)
+? Используется для этой функции ReceiveAge (время обработки сервера и локального клиента)
+
+48) getthreadidentity(): number
+Описание: получает индикатор потока (контекст запуска скрипта)
+? По умолчанию стоит 8 (Replicate)
+? Виды потоков:
+
+0 – Неизвестный
+1 – Роблокс студио 
+2 – Обычный скрипт (BaseScript)
+3 – Игровой скрипт (GameScript)
+4 – Роблокс скрипт (RobloxScript)
+5 – Команда (Command) (Команда в консоле для разработчика)
+6 – Плагин (Plugin)
+7 – Веб сервис (WebService)
+8 – Репликация (Replication)
+
+49) setthreadidentity(number): void
+Описание: ставит индикатор потока
+
+50) request(RequestTable): action
+Описание: замена HttpService:RequestInternal
+! Может вызвать Http Error 429
+Пример:
+
+print(request({Url = HttpUrl, Method = "GET"}).Body)
+
+? Какие есть методы:
+GET: Получает содержимое ссылки (game:HttpGet)
+POST: Отправляет пост на сайт по ссылке. Отправляет Body (game:HttpPost)
+PUT: Перемещает все текущие итерации в Body дату
+
+51) writefile(FileName: string): void 
+Описание: создаёт новый файл или изменяет его (если он сделан эксплоитом)
+! Не может изменить не эксплоит файлы
+
+52) readfile(FileName: string): string
+Описание: возвращает дату в файле из памяти устройства клиента
+? Может прочитать любой файл и ссылку на файл
+
+53) isfile(FileName: string): bool
+Описание: проверяет есть ли такой файл в памяти устройства клиента
+
+54) makefolder(FolderName: string): void
+Описание: создаёт папку (которая с файлами)
+
+55) listfiles(FolderName: string): table
+Описание: получает все файлы в папке
+
+56) isfolder(FolderName: string): bool
+Описание: проверяет есть ли такая папка в памяти устройства клиента
+
+57) getcustomasset(FileName: string): asset
+Описание: получает кастомный ассет по файлу или по ссылке на файл 
+! Доступны только mp3, jpg, png и тому подобные
+Пример:
+
+local suc, response = pcall(function()
+  return game:HttpGet(link with file png)
+end)
+
+local image = writefile("Image.png", response)
+decal.Texture = getcustomasset(image)
+
+58) cloneref(Instance): Instance
+Описание: Clone Reference – копирует ссылку на объект (первый элемент) и таким образом он становится типо менее неуязвимее
+Пример:
+
+local SG = cloneref(Instance.new("ScreenGui", gethui()))
+
+59) getscriptclosure, getscriptfunction(module: ModuleScript)()
+Описание: Получает функцию у модуля
+Пример:
+
+local module = game:GetService("CoreGui").RobloxGui.Modules.Common.Constants
+local constants = getrenv().require(module)
+local generated = getscriptclosure(module)()
+
+60) lz4compress(string): string
+Описание: функция сжимает текст для оптимизации при этом по логике скриптов он остаётся идентичным
+Пример:
+
+local raw = "Hello, world!"
+local compressed = lz4compress(raw)
+print(compressed)
+
+61) lz4decompress(string): string
+Описание: расжимает текст от lz4
+
+62) queue_on_teleport, queueonteleport(string): void
+Описание: запускает скрипт после перезахода в игру
+
+63) getrunningscripts(): table
+Описание: получает все скрипты которые сейчас работают
+
+64) setsimulationradius(min, max): void
+Описание: ставит радиус симуляции (радиус передачи сети)
