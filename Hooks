@@ -86,3 +86,33 @@ print(ishooked(hook)) -- true
 
 hook = hookfunction(warn, error)
 print(isfunctionhooked(warn), isfunctionhooked(hook)) -- true false
+
+Ну а теперь давай составим сложный пример с этими функциями:
+
+1) hookfunction:
+
+local hook; hook = hookfunction(Instance.new, newcclosure(function(...)
+  if (...) == "Part" then
+   return nil
+  end
+ return hook(...)
+end))
+
+-- Блокирует создание объектов (локально)
+-- Instance.new является функцией
+ -- vararg вернул строку, (...) вернёт первый аргумент у функции
+ -- hook(...) вернуло оригинальную функцию
+
+2) hookmetamethod:
+
+local hook; hook = hookmetamethod(game.Players, "__namecall", newcclosure(function(self, ...)
+ if not checkcaller() and self == game.Players.LocalPlayer and getnamecallmethod():lower() == "kick" then
+   return nil
+ end
+  return hook(self, ...)
+end))
+
+-- Блокирует функцию kick (работает только на кике со стороны сервера)
+-- not checkcaller() проверяет что функцию вызвал не клиент
+-- self возвращает что именно вызовет метод, (...) вернул первый аргумент который вызвал метод Kick
+-- hook(self, ...) вернул оригинальную функцию
