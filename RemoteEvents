@@ -1,0 +1,91 @@
+RemoteEvent не является прям основным в играх, но является полезной штукой
+RemoteEvent позволяет запускать клиенту скрипт на сервер, но во многих плейсах стоит анти чит 
+Вот основные компоненты:
+
+1) RemoteEvent
+Это объект обеспечивает асинхронную одностороннюю связь через границу клиент-сервер без уступки для ответа
+Это взаимодействие может быть направлено от одного клиента к серверу, от сервера к определенному клиенту или от сервера ко всем клиентам
+
+? Чтобы запустить RemoteEvent нужно использовать FireServer(args)
+? RemoteEvent могут храниться почти где угодно
+! Только сервер может использовать FireClient, OnServerEvent, FireAllClients
+
+Для RemoteEvent существуют аргументы которые также переносятся на сервер:
+
+-- Пример
+local args = {
+   [1] = CFrame.new(12, 32, 100)
+}
+
+player.Character.Humanoid.TeleportRemote:FireServer(unpack(args))
+
+Этот скрипт запускает RemoteEvent с заданными характеристиками
+? unpack это функция которая распаковывет массив и делает её так сказать аргументами для функций
+! FireServer ничего не возвращает
+? Можно использовать и так: TeleportRemote:FireServer(CFrame.new(12, 30, 100)) ведь FireServer это как функция
+
+Но например я хочу чтобы меня телепортировало к объекту и я могу использовать так:
+
+local args = {
+   [1] = part.CFrame
+}
+
+player.Character.Humanoid.TeleportRemote:FireServer(unpack(args))
+
+? Если RemoteEvent выполняется на стороне клиента то её можно удалить с помощью :Destroy() и она не будет запускаться, а если на сервере и удалить её то она может запускаться, но вызывать ошибки для клиента
+У RemoteEvent может быть неограниченное количество аргументов:
+
+-- Это тоже пример
+local args = {
+   [1] = workspace.NPCs.Zombie, -- target
+   [2] = 10 -- damage
+}
+
+game.Players.LocalPlayer.Character.Sword.DamageRemote:FireServer(unpack(args))
+
+Скрипт вызывает на сервер RemoteEvent с указанными параметрами
+? ReplicatedStorage это место хранения для RemoteEvents
+
+RemoteEvents также можно вызывать циклами (они могут быть Yield (задерживать цикл)):
+
+for i = 1, 20 do 
+ workspace.House1.Bag.GetLootRemote:FireServer()
+  task.wait(0.1) -- не обязательно
+end
+
+Но если например GetLootRemote удаляет сумку после получения, то можно сделать так чтобы искало все мешки в игре:
+
+for _, bag in next, workspace:GetDescendants() do
+  if bag:IsA("BasePart") and bag.Name == "Bag" and bag:FindFirstChild("GetLootRemote") then
+    bag.GetLootRemote:FireServer()
+  end
+end
+
+? Иногда можно запустить RemoteEvent с инструмента другого игрока, но действия запуститься как будто у локального игрока есть этот инструмент
+ ! Если тот инструмент удалиться или игрок снимет его, то локальный игрок не сможет запустить этот RemoteEvent
+ 
+2) RemoteFunction
+Похоже на RemoteEvent. Это объект обеспечивает синхронную двустороннюю связь через границу клиент-сервер
+Вы можете использовать его для определения пользовательской функции обратного вызова и вызывать ее вручную, вызывая RemoteFunction:InvokeClient() или RemoteFunction:InvokeServer()
+Код, вызывающий функцию, выполняет команду до тех пор, пока не получит ответ от получателя
+
+? Чтобы запустить RemoteFunction нужно использовать InvokeServer(args) 
+! Всегда является Yield (задерживает поток в циклах)
+? Синхронный означает блокирует потом, а асинхронный наоборот
+? Система аргументов аналогична как и у RemoteEvents
+
+for i = 1, 10 do
+  game.Players.LocalPlayer.Character.Staff.RegenRemote:InvokeServer()
+end -- представь что будет задержка до тех пор пока не закончится анимация (4 секунды) и цикл завершить через 40 секунд, а не один кадр
+
+И как же тогда быть? Можно создать новый поток в циклах используя task.spawn или coroutine.wrap:
+
+for i = 1, 10 do
+  coroutine.wrap(function()
+    game.Players.LocalPlayer.Character.Staff.RegenRemote:InvokeServer()
+  end)()
+end
+
+! В coroutine.wrap важно использовать end)() а не end)
+ ? Эти скобки: () запускают короутину возвращённую coroutine.wrap
+  ! У RemoteFunction есть Rate limit в 50KB/sec
