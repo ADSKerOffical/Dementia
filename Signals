@@ -1,0 +1,43 @@
+Сигналы в роблоксе играют большую роль в роблоксе
+Без них многие функции не работали бы
+Сигналы это например part.Touched, tool.Activated и т.д
+
+Для сигналов используются методы Connect (Основной), Once
+Для этих методов надо использовать функции (callback)
+
+? Connect: запускает функцию каждый раз при определенном действии
+ ? Для соединений Rate limit является ≈80 повторений в секунду
+? Once: запускает функцию один раз
+
+Synapse X создал функции которые запускают сигналы:
+
+1) firesignal(signal, arg): void
+ Симулирует активацию всех соединений у этого сигнала с определённым аргументом:
+ 
+ firesignal(game.Players.LocalPlayer.CharacterAdded, game.Players.LocalPlayer.Character)
+ 
+2) getconnections(signal): table
+ Получает все соединения у этого сигнала:
+ 
+ for _, connection in next, getconnections(game.GuiService.MenuOpened) do
+   connection:Disconnect()
+ end
+ 
+3) fireclickdetector(cl: ClickDetector, radius: number, namecall: string): void
+ Запускает клик детектор с определённым радиусом и методом:
+  ? Если просто запустить fireclickdetector(cl) то клик детектор запуститься с любого расстояния и запуститься метод MouseClick
+  
+  local cl = Instance.new("ClickDetector")
+  fireclickdetector(cl, math.huge, "MouseClick")
+  
+4) fireproximityprompt(prompt: ProximityPrompt, radius: number, namecall: string): void
+ Аналогичен с fireclickdetector
+  ! Расстояние запуска промпта зависит от того какое значение поставил сервер
+  
+5) firetouchinterest(part1, part2, number): void
+ Симулирует прикосновение двух объектов если у part1 есть TouchInterest и вызывает событие на сервер если сеть part1 принадлежит локальному игроку 
+  ? Когда у объекта добавляется сигнал Touched то к нему добавляется TouchInterest
+  
+  for _, player in next, game.Players:GetPlayers() do
+    firetouchinterest(tool.Handle, player.Character.HumanoidRootPart, math.huge)
+  end
