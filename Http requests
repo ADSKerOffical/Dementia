@@ -1,0 +1,75 @@
+В роблоксе ссылки играют небольшую роль для созданий игр, но в структуре роблокса они играют одну из самых важных ролей
+Для ссылок специально создали HttpService и вот некоторые функции:
+
+1) :GetAsync(url: string): string, (Yield)
+ Делает Http запрос на raw ссылку и возвращает информацию в виде строки
+  ! Этот метод работает только со стороны сервера 
+  ? Читеры используют game:HttpGet (Синхронный) и game:HttpGetAsync (Асинхронный)
+   ! В роблокс студио нельзя использовать эти методы
+   
+2) :PostAsync(url: string, data: string, contenttype: Enum.HttpContentType, compress: bool, headers: table): action
+ Отправляет Http запрос
+ 
+3) :JSONDecode(urldata: string): table
+ Расшифровывает json файл по ссылке
+  ? Функцию можно использовать на клиенте
+  ! Обязательно должен быть синтекс .json у ссылки
+  ! Чтобы можно было использовать это надо чтобы сначала произвёл запрос GET на ссылку, тоесть так: HttpService:JSONDecode(game:HttpGetAsync(url))
+  
+4) :JSONEncode(data: table): string
+ Превращает Lua таблицу в JSON таблицу
+  ? Нужна для HttpPost
+  
+5) RequestAsync / RequestInternal(options: table): action
+ Делает запрос на ссылку с определёнными настройками
+  ? options: {Url = url: string, Method = method: string, Headers = {["Content-Type"] = "application/json"}, Body = jsontable: string}
+   ? Читеры используют request вместо этих функций
+   
+   Пример функции с использованием GET:
+   
+   print(request({Url = "https://raw.githubusercontent.com/ADSKerOffical/BHU/refs/heads/main/BudgifyFunctions", Method = "GET",}).Body) -- Возвращает скрипт в виде строки
+    
+   GET возвращает такие параметры (в виде таблицы):
+    1. StatusMessage: string – OK 
+    2. Success: bool – был ли запрос успешный
+    3. StatusCode: number – статус кода 
+    4. Headers: table – возвращает полученные Headers
+    5. Body: string – то что получила ссылка (raw код)
+    
+   Какие есть методы:
+    1. GET – запрашивает ресурс по указанному адресу. Не использует параметр Body (в настройках запроса)
+    2. POST – отправляет предоставленные данные Body по запрошенному адресу
+    3. DELETE – удаляет ресурс, указанный в предоставленных данных Body по запрошенному адресу
+    4. HEAD – запрашивает ответ, идентичный запросу GET, но без Body ответа
+    5. OPTIONS – запрашивает разрешенные параметры связи для предоставленного адреса
+    6. PUT – заменяет все текущие итерации ресурса, указанного в предоставленных данных Body
+   
+ Какие есть ошибки у ссылок:
+  1. HTTP 400 – HTTP Post не удался
+  2. HTTP 401 – Что-то в роде запрещённой ссылке
+  3. HTTP 403 – Запрещённая ссылка
+  4. HTTP 404 – Ссылка не найдена
+  5. HTTP 429 – Слишком много запросов
+
+У роблокса есть Endpoint (собственные api ссылки) и roproxy.com (rprxy.com)
+ ? Endpoint – конкретный запрос ссылки
+ ? Roproxy – посредник роблкса для обхода ограничений и взаимодействий с роблокс API
+  ! Roproxy запрос всегда возвращает json как и Endpoint
+  
+  Какие есть Endpoint у Roproxy:
+   ? Можно писать roblox вместо roproxy, но желательно использовать roproxy
+  
+  1. users.roblox.com
+  2. economy.roblox.com
+  3. friends.roblox.com
+  4. gamejoin.roblox.com
+  5. games.roblox.com
+  
+  ? Лист всех Endpoint: https://github.com/matthewdean/roblox-web-apis
+  
+  Пример:
+  
+  local data = game.HttpService:JSONDecode(game:HttpGetAsync("https://games.roproxy.com/v1/games?universeIds="..game.GameId))
+    for i, v in next, data.data[1] do
+      print(i, v)
+    end
