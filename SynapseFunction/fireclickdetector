@@ -1,0 +1,11 @@
+fireclickdetector(ClickDetector) – эксплоит функция которая активирует ClickDetector
+Функция активирует ClickDetector только если максимальный радиус (MaxActivationDistance) позволяет активировать этот ClickDetector
+
+Пример скрипта:
+
+for _, cd in next, workspace:GetDescendants() do
+  if cl:IsA("ClickDetector") then
+    cl.MaxActivationDistance = math.huge
+    fireclickdetector(cl)
+  end
+end
