@@ -1,0 +1,10 @@
+setreadonly(table, bool) – эксплоит функция которая замораживаете или размораживает таблицу (нельзя изменять)
+isreadonly(table): bool – эксплоит функция которая проверяет является ли таблица замороженой
+
+Пример скрипта:
+
+for _, tabl in next, getgc() do
+  if typeof(tabl) == "table" and isreadonly(tabl) then
+    setreadonly(tabl, false)
+  end
+end
