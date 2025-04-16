@@ -1,0 +1,12 @@
+getgc(): table – эксплоит функция которая получает все элементы в garbage collection
+filtergc(table, options): table – эксплоит функция которая получает элементы в таблицах или функциях с указанными настройками
+
+Пример скрипта:
+
+for _, el in next, getgc() do
+  if typeof(el) == "table" and rawget(el, "Options") and typeof(rawget(el, "Options")) == "table" then
+    for i, opt in next, rawget(el, "Options") then
+      print(i, opt)
+    end
+  end
+end
