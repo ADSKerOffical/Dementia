@@ -1,0 +1,17 @@
+newcclosure(function): function – эксплоит функция которая создаёт функцию или делает функцию C closure (Будто написанная на C++)
+iscclosure(function): bool – эксплоит функция которая проверяет является ли функция C closure
+islclosure(function): bool – противоположность iscclosure 
+
+Пример скрипта 1:
+
+local de = newcclosure(function(text)
+  return text
+end)
+
+Пример скрипта 2:
+
+for _, func in next, getgenv() do
+  if typeof(func) == "function" and islclosure(func) then
+    print(debug.getinfo(func).name)
+  end
+end
