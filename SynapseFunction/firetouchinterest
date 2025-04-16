@@ -1,0 +1,11 @@
+firetouchinterest(part1, part2, toggle: number) – эксплоит функция которая симулирует прикосновение part1 к part2
+toggle это отвечает какой сигнал должен активироваться: 0 – активируется Touched, 1 – активируется TouchEnded
+Можно симулировать прикосновении part1 к другим частям только если сеть part1 принадлежит локальному игроку
+
+Пример скрипта:
+
+for _, part in next, workspace:GetDescendants() do
+  if part:IsA("BasePart") and part.Name == "Bag" then
+    firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, part, 0)
+  end
+end
